@@ -1,54 +1,114 @@
-import { useQuery } from '@tanstack/react-query'
-import { api } from './api/client'
-import type { Item } from './types'
+import { useState } from 'react'
+import { YarnNode, YarnSummaryCard } from './features/yarn/components/display'
+import { YarnBuilder } from './features/yarn/components/builder'
+import {
+  complexYarn,
+  basicYarns,
+  compositeYarns,
+  complexYarns,
+} from './features/yarn/mocks'
+import type { Yarn } from './features/yarn/types'
 import './App.css'
 
+type ViewMode = 'builder' | 'demo';
+
 function App() {
-  const { data: items, isLoading, error } = useQuery<Item[]>({
-    queryKey: ['items'],
-    queryFn: api.getItems,
-  })
-
-  const { data: health } = useQuery({
-    queryKey: ['health'],
-    queryFn: api.healthCheck,
-  })
-
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <div>Error: {(error as Error).message}</div>
-  }
+  const [viewMode, setViewMode] = useState<ViewMode>('builder')
+  const [selectedYarn, setSelectedYarn] = useState<Yarn>(complexYarn)
 
   return (
     <div>
-      <h1>Hyran Project</h1>
+      <h1>Hyran Yarn Library</h1>
 
-      <div className="card">
-        <h2>API Status</h2>
-        <p>Backend health: {health?.status || 'checking...'}</p>
+      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <div className="tab-buttons" style={{ display: 'inline-flex', gap: '8px', background: '#f0f0f0', padding: '4px', borderRadius: '8px' }}>
+          <button
+            onClick={() => setViewMode('builder')}
+            style={{
+              padding: '10px 24px',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '14px',
+              background: viewMode === 'builder' ? '#1976d2' : 'transparent',
+              color: viewMode === 'builder' ? 'white' : '#666',
+              transition: 'all 0.2s',
+            }}
+          >
+            Yarn Builder
+          </button>
+          <button
+            onClick={() => setViewMode('demo')}
+            style={{
+              padding: '10px 24px',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '14px',
+              background: viewMode === 'demo' ? '#1976d2' : 'transparent',
+              color: viewMode === 'demo' ? 'white' : '#666',
+              transition: 'all 0.2s',
+            }}
+          >
+            Example Yarns
+          </button>
+        </div>
       </div>
 
-      <div className="card">
-        <h2>Items from Backend</h2>
-        {items && items.length > 0 ? (
-          <ul style={{ textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
-            {items.map((item) => (
-              <li key={item.id}>
-                <strong>{item.name}</strong>: {item.description}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No items found</p>
-        )}
-      </div>
+      {viewMode === 'builder' ? (
+        <YarnBuilder />
+      ) : (
+        <div className="card" style={{ textAlign: 'left' }}>
+          <h2>Yarn Display Demo</h2>
 
-      <p className="read-the-docs">
-        Edit src/App.tsx or backend/src/app.py to test hot reload
-      </p>
+          <div style={{ marginBottom: '20px' }}>
+            <label htmlFor="yarn-select" style={{ fontWeight: 'bold', marginRight: '10px' }}>
+              Select a yarn to view:
+            </label>
+            <select
+              id="yarn-select"
+              onChange={(e) => {
+                const yarns = [...basicYarns, ...compositeYarns, ...complexYarns]
+                const yarn = yarns.find((y) => y.id === e.target.value)
+                if (yarn) setSelectedYarn(yarn)
+              }}
+              value={selectedYarn.id}
+              style={{ padding: '8px', fontSize: '14px', borderRadius: '4px' }}
+            >
+              <optgroup label="Basic Yarns">
+                {basicYarns.map((yarn) => (
+                  <option key={yarn.id} value={yarn.id}>
+                    {yarn.name || yarn.id}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Composite Yarns">
+                {compositeYarns.map((yarn) => (
+                  <option key={yarn.id} value={yarn.id}>
+                    {yarn.name || yarn.id}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Complex Multi-Process Yarns">
+                {complexYarns.map((yarn) => (
+                  <option key={yarn.id} value={yarn.id}>
+                    {yarn.name || yarn.id}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+
+          <YarnSummaryCard yarn={selectedYarn} />
+
+          <div style={{ marginTop: '20px' }}>
+            <h3 style={{ marginBottom: '16px' }}>Yarn Structure</h3>
+            <YarnNode yarn={selectedYarn} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
